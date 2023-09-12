@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Chapter 6 -->
+    <menuitem id="estate_menu_root" name="ESTATE">
+        <menuitem id="first_level_estate_menu" name="LVL1YEAH">
+            <menuitem id="low_lvl_estate_menu" action="estate_property_model_action"/>
+        </menuitem>
+    </menuitem>
+</odoo>
