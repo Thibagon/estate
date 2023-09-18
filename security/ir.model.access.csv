@@ -1,2 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 training_odoo.access_estate_property,access_estate_property,training_odoo.model_estate_property,base.group_user,1,1,1,0
+training_odoo.access_estate_property_type,access_estate_property_type,training_odoo.model_estate_property_type,base.group_user,1,1,1,0
+training_odoo.access_estate_tags,access_estate_tags,training_odoo.model_estate_tags,base.group_user,1,1,1,0
+training_odoo.access_estate_property_offer,access_estate_property_offer,training_odoo.model_estate_property_offer,base.group_user,1,1,1,0

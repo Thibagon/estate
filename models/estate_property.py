@@ -2,6 +2,7 @@ from odoo import models,fields
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
+
 # Chapter 4
 class EstateProperty(models.Model):
     _name = "estate_property"
@@ -9,7 +10,7 @@ class EstateProperty(models.Model):
 
     name = fields.Char("Title",required=True)
     description = fields.Text("Description")
-    property_type = fields.Char("Property type", required=True)
+    property_type_id = fields.Many2one("estate_property_type", string="Type")
     postcode = fields.Integer("Postcode", default=31000)
     expected_price = fields.Float("Expected price", required=True)
     living_area_surface= fields.Float("Living area (sqm)",default=1.0)
@@ -42,6 +43,10 @@ class EstateProperty(models.Model):
         ],
         default="new"
     )
+    buyer_id = fields.Many2one("res.partner", string="Buyer", copy=False)
+    salesman_id = fields.Many2one("res.users", string="Salesman", default=lambda self: self.env.user)
+    tags_ids = fields.Many2many("estate_tags",string="Tags")
+    offer_ids = fields.One2many("estate_property_offer",inverse_name="property_id",string="Offers")
 
     _sql_constraints = [
         ('check_bedrooms',"CHECK(bedrooms > 0)",'You must have bedrooms')
