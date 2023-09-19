@@ -1,4 +1,4 @@
-from odoo import models,fields
+from odoo import models,fields,api
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
@@ -17,7 +17,7 @@ class EstateProperty(models.Model):
     facades = fields.Integer("Facades")
     garage = fields.Boolean("Garage")
     garden = fields.Boolean("Garden")
-    garden_area = fields.Integer("Garden Area")
+    garden_area = fields.Float("Garden Area")
     garden_orientation = fields.Selection(
         [
             ('N', 'North'),
@@ -27,8 +27,6 @@ class EstateProperty(models.Model):
         ],
         default="S"
     )
-
-    # Chapter 6 (modification and addition to chapter 4 model)
     selling_price = fields.Float("Selling price",readonly=True,copy=False)
     date_availability = fields.Date("Date available",default=date.today()+relativedelta(months=3),copy=False)
     bedrooms = fields.Integer("Bedrooms",default=2)
@@ -47,7 +45,31 @@ class EstateProperty(models.Model):
     salesman_id = fields.Many2one("res.users", string="Salesman", default=lambda self: self.env.user)
     tags_ids = fields.Many2many("estate_tags",string="Tags")
     offer_ids = fields.One2many("estate_property_offer",inverse_name="property_id",string="Offers")
+    total_area = fields.Float(readonly=True, compute="_compute_total_area")
+    best_offer = fields.Float(compute="_compute_best_offer")
 
     _sql_constraints = [
         ('check_bedrooms',"CHECK(bedrooms > 0)",'You must have bedrooms')
     ]
+
+    @api.depends("living_area_surface", "garden_area")
+    def _compute_total_area(self):
+        for record in self:
+            record.total_area = record.living_area_surface + record.garden_area
+
+    @api.depends("offer_ids.price")
+    def _compute_best_offer(self):
+        for record in self:
+            if len(record.offer_ids.ids) > 0:
+                record.best_offer = max([p.price for p in record.offer_ids])
+            else:
+                record.best_offer = 0.0
+
+    @api.onchange("garden")
+    def _onchange_garden(self):
+        if self.garden:
+            self.garden_area = 10
+            self.garden_orientation = "N"
+        else:
+            self.garden_area = None
+            self.garden_orientation = None
