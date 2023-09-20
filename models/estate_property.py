@@ -1,4 +1,5 @@
 from odoo import models,fields,api
+from odoo.tools.float_utils import float_is_zero, float_compare
 from odoo.exceptions import ValidationError
 from datetime import date
 from dateutil.relativedelta import relativedelta
@@ -50,8 +51,16 @@ class EstateProperty(models.Model):
     best_offer = fields.Float(compute="_compute_best_offer")
 
     _sql_constraints = [
-        ('check_bedrooms',"CHECK(bedrooms > 0)",'You must have bedrooms')
+        ('check_bedrooms',"CHECK(bedrooms > 0)",'You must have bedrooms'),
+        ('strictly_positive_expected_price','CHECK(expected_price>0)','Expected price should be strictly positive'),
+        ('positive_selling_price','CHECK(selling_price>=0)','Selling price of a property must be positive')
     ]
+
+    @api.constrains('selling_price','expected_price')
+    def _check_ninty_percent_gap(self):
+        for record in self:
+            if not float_is_zero(record.selling_price,precision_rounding=0.01) and float_compare(record.selling_price, record.expected_price*0.9,precision_rounding=0.01) == -1:
+                raise ValidationError("Offer price must be above 90% of the price")
 
     @api.depends("living_area_surface", "garden_area")
     def _compute_total_area(self):
