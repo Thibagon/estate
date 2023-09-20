@@ -4,15 +4,26 @@
             <field name="name">Offers for one property</field>
             <field name="model">estate_property_offer</field>
             <field name="arch" type="xml">
-                <tree>
+                <tree
+                        editable="bottom"
+                        decoration-success="status=='accepted'"
+                        decoration-danger="status=='refused'"
+                >
+                    <field name="status" invisible="1"/>
                     <field name="price"/>
                     <field name="partner_id"/>
                     <field name="validity"/>
                     <field name="date_deadline"/>
-                    <button name="accept_offer" type="object" icon="fa-check"/>
-                    <button name="refuse_offer" type="object" icon="fa-times"/>
-                    <field name="status"/>
+                    <button name="accept_offer" type="object" icon="fa-check" attrs="{'invisible':[('status','!=','eval')]}"/>
+                    <button name="refuse_offer" type="object" icon="fa-times" attrs="{'invisible':[('status','!=','eval')]}"/>
                 </tree>
             </field>
+        </record>
+
+        <record id="property_offer_action_view" model="ir.actions.act_window">
+            <field name="name">Property offers per types</field>
+            <field name="res_model">estate_property_offer</field>
+            <field name="domain">[('property_type_id','=','active_id')]</field>
+            <field name="view_mode">tree,form</field>
         </record>
     </odoo>

@@ -9,6 +9,7 @@ from dateutil.relativedelta import relativedelta
 class EstateProperty(models.Model):
     _name = "estate_property"
     _description = "Evaluate the real estate value"
+    _order = "id desc"
 
     name = fields.Char("Title",required=True)
     description = fields.Text("Description")
@@ -46,7 +47,7 @@ class EstateProperty(models.Model):
     buyer_id = fields.Many2one("res.partner", string="Buyer", copy=False)
     salesman_id = fields.Many2one("res.users", string="Salesman", default=lambda self: self.env.user)
     tags_ids = fields.Many2many("estate_tags",string="Tags")
-    offer_ids = fields.One2many("estate_property_offer",inverse_name="property_id",string="Offers")
+    offer_ids = fields.One2many("estate_property_offer",inverse_name="property_id",string="Offers", inverse="_inverse_offers")
     total_area = fields.Float(readonly=True, compute="_compute_total_area")
     best_offer = fields.Float(compute="_compute_best_offer")
 
@@ -71,7 +72,11 @@ class EstateProperty(models.Model):
     def _compute_best_offer(self):
         for record in self:
             if len(record.offer_ids.ids) > 0:
-                record.best_offer = max([p.price for p in record.offer_ids])
+                try:
+                    record.best_offer = max([p.price for p in record.offer_ids if p.status != "refused"])
+                except ValueError as e:
+                    # It needs a fix probably, but it's a nice patch to avoid doing max() of empty list
+                    record.best_offer = 0.0
             else:
                 record.best_offer = 0.0
 
@@ -83,6 +88,14 @@ class EstateProperty(models.Model):
         else:
             self.garden_area = None
             self.garden_orientation = None
+
+    def _inverse_offers(self):
+        for record in self:
+            offers = self.offer_ids
+            if record.state == "new" and len(offers.ids) > 0:
+                record.state = "offer_received"
+            elif record.state == "offer_received" and len([o for o in self.offer_ids if o.status == "accepted"])>0:
+                record.state = "offer_accepted"
 
     def set_state_canceled(self):
         for record in self:
