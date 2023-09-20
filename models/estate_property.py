@@ -1,4 +1,5 @@
 from odoo import models,fields,api
+from odoo.exceptions import ValidationError
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
@@ -73,3 +74,19 @@ class EstateProperty(models.Model):
         else:
             self.garden_area = None
             self.garden_orientation = None
+
+    def set_state_canceled(self):
+        for record in self:
+            if record.state != "sold":
+                record.state = "canceled"
+            else:
+                raise ValidationError("You can't sold a canceled property")
+        return True
+
+    def set_state_sold(self):
+        for record in self:
+            if record.state != "canceled":
+                record.state = "sold"
+            else:
+                raise ValidationError("You can't cancel an already sold property")
+        return True

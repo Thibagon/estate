@@ -1,4 +1,5 @@
 from odoo import fields, models, api
+from odoo.exceptions import ValidationError
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
@@ -32,3 +33,35 @@ class EstatePropertyOffer(models.Model):
             date_of_creation = date.today() if not record.create_date else record.create_date.date()
             delta = relativedelta(record.date_deadline, date_of_creation)
             record.validity = delta.days + delta.months * 30 + delta.years * 12
+
+    def accept_offer(self):
+        if not self._has_an_accepted_offer():
+            for record in self:
+                if record.status != "refused" and record.property_id.state != "canceled":
+                    record.status = "accepted"
+                    record.property_id.selling_price = record.price
+                    record.property_id.buyer_id = record.partner_id
+                    self._refuse_all_others()
+                    record.property_id.state = "offer_accepted"
+                else:
+                    raise ValidationError("This offer has been refused")
+        else:
+            raise ValidationError("An offer has already been accepted for this property")
+
+    def refuse_offer(self):
+        for record in self:
+            if record.status != "accepted":
+                record.status = "refused"
+            else:
+                raise ValidationError("This offer is already accepted")
+
+    def _has_an_accepted_offer(self):
+        for record in self.property_id.offer_ids:
+            # The first hand of the condition give the possibility to click on the same accepted offer more than once
+            if record.id != self.id and record.status == "accepted":
+                return True
+
+    def _refuse_all_others(self):
+        for record in self.property_id.offer_ids:
+            if record.id != self.id:
+                record.status = "refused"
