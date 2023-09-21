@@ -106,4 +106,17 @@
             </field>
         </record>
 
+    <record id="inherited_estate_property_user_form" model="ir.ui.view">
+        <field name="name">Property of salesman</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='preferences']" position="after">
+                <page string="Real estate property">
+                    <field name="property_ids"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
     </odoo>

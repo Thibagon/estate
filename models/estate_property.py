@@ -1,6 +1,6 @@
 from odoo import models,fields,api
 from odoo.tools.float_utils import float_is_zero, float_compare
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError, UserError
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
@@ -88,6 +88,12 @@ class EstateProperty(models.Model):
         else:
             self.garden_area = None
             self.garden_orientation = None
+
+    @api.ondelete(at_uninstall=False)
+    def _property_processing_offer_safety_belt(self):
+        self.ensure_one()
+        if self.state not in ['new','canceled']:
+            raise UserError("You can only delete new or canceled property")
 
     def _inverse_offers(self):
         for record in self:

@@ -1,5 +1,5 @@
 from odoo import fields, models, api
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError, UserError
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
@@ -33,6 +33,14 @@ class EstatePropertyOffer(models.Model):
         for record in self:
             date_of_creation = date.today() if not record.create_date else record.create_date.date()
             record.date_deadline = date_of_creation+relativedelta(days=record.validity)
+
+    @api.model
+    def create(self,vals):
+        best_offer = self.env['estate_property'].browse(vals["property_id"]).best_offer
+        if vals['price'] >= best_offer:
+            return super().create(vals)
+        else:
+            raise UserError(f"You can't put an offer lower than {best_offer}")
 
     def _inverse_date_deadline(self):
         for record in self:
