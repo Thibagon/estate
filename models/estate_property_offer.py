@@ -3,55 +3,69 @@ from odoo.exceptions import ValidationError, UserError
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
+
 class EstatePropertyOffer(models.Model):
-    _name = 'estate_property_offer'
-    _description = 'Offers made for a given property'
+    _name = "estate_property_offer"
+    _description = "Offers made for a given property"
     _order = "price desc"
 
-    price = fields.Float("Price",required=True)
+    price = fields.Float("Price", required=True)
     status = fields.Selection(
-        [
-            ('accepted','Accepted'),
-            ('refused','Refused'),
-            ('eval','In evaluation')
-        ],
+        [("accepted", "Accepted"), ("refused", "Refused"), ("eval", "In evaluation")],
         copy=False,
-        default='eval'
+        default="eval",
     )
-    partner_id = fields.Many2one("res.partner",string="Partner",required=True)
-    property_id = fields.Many2one("estate_property",string="Property",required=True)
-    validity = fields.Integer("Validity in days",default=7)
-    date_deadline = fields.Date(compute="_compute_date_deadline", inverse="_inverse_date_deadline")
-    property_type_id = fields.Many2one("estate_property_type",related="property_id.property_type_id")
+    partner_id = fields.Many2one("res.partner", string="Partner", required=True)
+    property_id = fields.Many2one("estate_property", string="Property", required=True)
+    validity = fields.Integer("Validity in days", default=7)
+    date_deadline = fields.Date(
+        compute="_compute_date_deadline", inverse="_inverse_date_deadline"
+    )
+    property_type_id = fields.Many2one(
+        "estate_property_type", related="property_id.property_type_id"
+    )
 
     _sql_constraints = [
-        ('strictly_positive_offer_price','CHECK(price>0)','Offer price must be strictly positive')
+        (
+            "strictly_positive_offer_price",
+            "CHECK(price>0)",
+            "Offer price must be strictly positive",
+        )
     ]
 
     @api.depends("validity")
     def _compute_date_deadline(self):
         for record in self:
-            date_of_creation = date.today() if not record.create_date else record.create_date.date()
-            record.date_deadline = date_of_creation+relativedelta(days=record.validity)
+            date_of_creation = (
+                date.today() if not record.create_date else record.create_date.date()
+            )
+            record.date_deadline = date_of_creation + relativedelta(
+                days=record.validity
+            )
 
     @api.model
-    def create(self,vals):
-        best_offer = self.env['estate_property'].browse(vals["property_id"]).best_offer
-        if vals['price'] >= best_offer:
+    def create(self, vals):
+        best_offer = self.env["estate_property"].browse(vals["property_id"]).best_offer
+        if vals["price"] >= best_offer:
             return super().create(vals)
         else:
             raise UserError(f"You can't put an offer lower than {best_offer}")
 
     def _inverse_date_deadline(self):
         for record in self:
-            date_of_creation = date.today() if not record.create_date else record.create_date.date()
+            date_of_creation = (
+                date.today() if not record.create_date else record.create_date.date()
+            )
             delta = relativedelta(record.date_deadline, date_of_creation)
             record.validity = delta.days + delta.months * 30 + delta.years * 12
 
     def accept_offer(self):
         if not self._has_an_accepted_offer():
             for record in self:
-                if record.status != "refused" and record.property_id.state != "canceled":
+                if (
+                    record.status != "refused"
+                    and record.property_id.state != "canceled"
+                ):
                     record.status = "accepted"
                     record.property_id.selling_price = record.price
                     record.property_id.buyer_id = record.partner_id
@@ -60,7 +74,9 @@ class EstatePropertyOffer(models.Model):
                 else:
                     raise ValidationError("This offer has been refused")
         else:
-            raise ValidationError("An offer has already been accepted for this property")
+            raise ValidationError(
+                "An offer has already been accepted for this property"
+            )
 
     def refuse_offer(self):
         for record in self:
@@ -79,4 +95,3 @@ class EstatePropertyOffer(models.Model):
         for record in self.property_id.offer_ids:
             if record.id != self.id:
                 record.status = "refused"
-
