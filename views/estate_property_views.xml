@@ -69,7 +69,6 @@
                                     <field name="garden"/>
                                     <field name="garden_area" attrs="{'invisible':[('garden','=',False)]}"/>
                                     <field name="garden_orientation" attrs="{'invisible':[('garden','=',False)]}"/>
-                                    <field name="state"/>
                                     <field name="total_area"/>
                                 </group>
                             </page>

@@ -84,22 +84,28 @@ class EstateProperty(models.Model):
 
     @api.depends("living_area_surface", "garden_area")
     def _compute_total_area(self):
-        for record in self:
-            record.total_area = record.living_area_surface + record.garden_area
+        for estate_property in self:
+            estate_property.total_area = (
+                estate_property.living_area_surface + estate_property.garden_area
+            )
 
     @api.depends("offer_ids.price")
     def _compute_best_offer(self):
-        for record in self:
-            if len(record.offer_ids.ids) > 0:
+        for estate_property in self:
+            if len(estate_property.offer_ids.ids) > 0:
                 try:
-                    record.best_offer = max(
-                        [p.price for p in record.offer_ids if p.status != "refused"]
+                    estate_property.best_offer = max(
+                        [
+                            p.price
+                            for p in estate_property.offer_ids
+                            if p.status != "refused"
+                        ]
                     )
                 except ValueError as e:
                     # It needs a fix probably, but it's a nice patch to avoid doing max() of empty list
-                    record.best_offer = 0.0
+                    estate_property.best_offer = 0.0
             else:
-                record.best_offer = 0.0
+                estate_property.best_offer = 0.0
 
     @api.onchange("garden")
     def _onchange_garden(self):
@@ -117,28 +123,27 @@ class EstateProperty(models.Model):
             raise UserError("You can only delete new or canceled property")
 
     def _inverse_offers(self):
-        for record in self:
-            offers = self.offer_ids
-            if record.state == "new" and len(offers.ids) > 0:
-                record.state = "offer_received"
+        for estate_property in self:
+            if estate_property.state == "new" and self.offer_ids:
+                estate_property.state = "offer_received"
             elif (
-                record.state == "offer_received"
+                estate_property.state == "offer_received"
                 and len([o for o in self.offer_ids if o.status == "accepted"]) > 0
             ):
-                record.state = "offer_accepted"
+                estate_property.state = "offer_accepted"
 
     def set_state_canceled(self):
-        for record in self:
-            if record.state != "sold":
-                record.state = "canceled"
+        for estate_property in self:
+            if estate_property.state != "sold":
+                estate_property.state = "canceled"
             else:
-                raise ValidationError("You can't sold a canceled property")
+                raise ValidationError("You can't cancel a sold property")
         return True
 
     def set_state_sold(self):
-        for record in self:
-            if record.state != "canceled":
-                record.state = "sold"
+        for estate_property in self:
+            if estate_property.state != "canceled":
+                estate_property.state = "sold"
             else:
-                raise ValidationError("You can't cancel an already sold property")
+                raise ValidationError("You can't sold a canceled property")
         return True
