@@ -79,19 +79,19 @@ class EstatePropertyOffer(models.Model):
             )
 
     def refuse_offer(self):
-        for record in self:
-            if record.status != "accepted":
-                record.status = "refused"
+        for offer in self:
+            if offer.status != "accepted":
+                offer.status = "refused"
             else:
                 raise ValidationError("This offer is already accepted")
 
     def _has_an_accepted_offer(self):
-        for record in self.property_id.offer_ids:
+        for property_offer in self.property_id.offer_ids:
             # The first hand of the condition give the possibility to click on the same accepted offer more than once
-            if record.id != self.id and record.status == "accepted":
+            if property_offer.id != self.id and property_offer.status == "accepted":
                 return True
 
     def _refuse_all_others(self):
-        for record in self.property_id.offer_ids:
-            if record.id != self.id:
-                record.status = "refused"
+        for property_offer in self.property_id.offer_ids:
+            if property_offer.id != self.id:
+                property_offer.status = "refused"
