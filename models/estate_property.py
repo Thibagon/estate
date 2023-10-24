@@ -22,7 +22,7 @@ class EstateProperty(models.Model):
     garden = fields.Boolean("Garden")
     garden_area = fields.Float("Garden Area")
     garden_orientation = fields.Selection(
-        [("N", "North"), ("S", "South"), ("E", "Est"), ("W", "West")], default="S"
+        [("N", "North"), ("S", "South"), ("E", "Est"), ("W", "West")]
     )
     selling_price = fields.Float("Selling price", readonly=True, copy=False)
     date_availability = fields.Date(
@@ -142,8 +142,15 @@ class EstateProperty(models.Model):
 
     def set_state_sold(self):
         for estate_property in self:
+            offers = estate_property.offer_ids.mapped(lambda offer: offer.status)
+            if "accepted" not in offers:
+                raise ValidationError(
+                    "You can't sold a property without an accepted offer"
+                )
             if estate_property.state != "canceled":
                 estate_property.state = "sold"
             else:
-                raise ValidationError("You can't sold a canceled property")
+                raise ValidationError(
+                    "You can't sold a canceled property or a property with no offer"
+                )
         return True
