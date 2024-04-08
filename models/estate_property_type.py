@@ -20,6 +20,6 @@ class EstatePropertyType(models.Model):
             record.offer_count = len([o.id for o in record.offer_ids if o.property_type_id.id == record.id])
 
     def action_view_offers(self):
-        res = self.env.ref("training_odoo.property_offer_action_view").read()[0]
+        res = self.env.ref("estate.property_offer_action_view").read()[0]
         res["domain"] = [('id', 'in', self.offer_ids.ids)]
         return res
